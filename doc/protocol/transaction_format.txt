@@ -1,0 +1,274 @@
+Format of group of transactions (every 80 ms)
+
+[   1] w21 01 48 05 r21 5A p1 p2 p3 p4 p5 cs
+[   1] w20 01 3A 0A q1 q2 q3 q4 q5 q6 q7 q8 q9 qa cw r20 5A 5A
+[   1] w20 01 70 09 r20 5A r1 r2 r3 r4 r5 r6 r7 r8 r9 cs
+[   1] w20 01 79 02 r20 5A s1 s2 cs
+[   1] w20 01 39 06 r20 5A t1 t2 t3 t4 t5 t6 cs
+[   1] w21 01 46 02 u1 u2 cw r21 5A 5A
+[   1] w20 02 00 01 v1 cw r20 5A 5A
+
+Example:
+
+[   1] w21 01 48 05 r21 5A 95 00 00 C0 17 18
+[   1] w20 01 3A 0A 05 00 01 00 00 00 BF 72 10 00 A8 r20 5A 5A
+[   1] w20 01 70 09 r20 5A 31 30 32 46 31 30 30 46 B3 EB
+[   1] w20 01 79 02 r20 5A 05 C7 98
+[   1] w20 01 39 06 r20 5A 00 05 00 02 00 00 5D
+[   1] w21 01 46 02 07 00 00 r21 5A 5A
+[   1] w20 02 00 01 00 43 r20 5A 5A
+
+Complete list of I2C attempts:
+
+w18 (NACK)
+w21 01 48 05 r21 5A p1 p2 p3 p4 p5 cs
+w36 (NACK)
+w20 01 3A 0A q1 q2 q3 q4 q5 q6 q7 q8 q9 qa cw r20 5A 5A
+w20 01 70 09 r20 5A r1 r2 r3 r4 r5 r6 r7 r8 r9 cs
+w20 01 79 02 r20 5A s1 s2 cs
+w20 01 39 06 r20 5A t1 t2 t3 t4 t5 t6 cs
+w22 (NACK)
+w21 01 46 02 u1 u2 cw r21 5A 5A
+w36 (NACK)
+w44 (NACK)
+w20 02 00 01 v1 cw r20 5A 5A
+w3e (NACK)
+w3e (NACK)
+w44 (NACK)
+
+
+Addresses:
+
+0x21 other microcontroller
+0x20 control panel
+0x18, 0x36, 0x22, 0x44, 0x3e ??
+
+Read transaction:
+
+1. Write address
+2. Write 3 fixed bytes, the 3rd being number of data bytes to read (not incl. ack+checksum)
+3. Read same address
+4. Read '5A' ack byte
+5. Read data bytes
+6. Read 'cs' checksum byte == xor of '5A' and data bytes
+
+Write transaction:
+
+1. Write address
+2. Write 3 fixed bytes, the 3rd being number of data bytes to write (not incl. checksum)
+3. Write data bytes
+4. Write 'cw' checksum == xor of shifted address, fixed bytes, and data bytes
+   (shifted address == (address << 1))
+5. Read address
+6. Read '5A' ack byte
+7. Read '5A' 'checksum' byte
+
+Microcontroller functions:
+
+## Main
+
+Jets 1 & 2
+
+## Other
+
+Light, blower
+Summer mode timer?
+
+Data bytes:
+
+## (Read from other microcontroller)
+## p1
+## p2
+
+Light sequence 5, trans later:
+00-03 - Current light level
+
+## p3
+## p4
+
+Summer mode sequence 3, trans 2:
+C0 - Normal
+C4 - Summer mode
+
+## p5
+
+## (Write to control panel)
+## q1
+
+? Replicates to s1 and t2? Heater control?
+
+## q2
+
+Jets sequence 2, trans 2, current status (also q6)
+00 - both off
+01 - Jets 1 on
+02 - Jets 2 on
+
+Air sequence 3, trans 2 (also q9)
+00 - off
+08 - on
+
+Clean sequence 2, trans 2 (also q6)
+00 - off
+05 - on (prob. 04=clean + 01=jets1)
+
+SetClean sequence 3, trans 2 (also q6, q9)
+00 - off
+0C - SetClean on (prob. 04=clean + 08=air)
+
+## q3
+## q4
+## q5
+
+Light sequence 3, trans 2:
+00-03 - Current light level (0-3, 0=off, 3=full)
+
+## q6
+
+Jets sequence 2, trans 2, current status (also q2)
+00 - both off
+04 - Jets 1 on
+08 - Jets 2 on
+
+Clean sequence 2, trans 2 (also q2)
+00 - off
+14 - on (prob. 10=clean + 04=jets1)
+
+SetClean sequence 3, trans 2 (also q2, q9)
+00 - off
+10 - SetClean on
+
+Summer mode sequence 4, trans 2
+00 - normal
+20 - Summer mode on
+
+## q7
+## q8
+## q9
+
+Air sequence 3, trans 2 (also q2)
+SetClean sequence 3, trans 2 (also q2, q6)
+10 (?0) - off
+11 (?1) - on
+
+## qa
+
+## (Read from control panel)
+## r1-r4 - ASCII set temperature
+
+Temperature on control panel display when temp up/down button is pressed once.
+e.g. 31 30 32 46 == "102F", 20 39 39 46 == " 99F", 55 54 2D 31 == "UT-1"
+
+## r5-r8 - ASCII current temperature
+
+Current water temperature displayed on control panel, same format as above
+
+## r9
+
+? B2,B3,B4,B7
+
+## s1-s2
+
+? Temperature/heater indication
+
+00 C5 or 05 C7 - ? temperature below set temp (heater and circ pump on?)
+00 C1 - ? temperature above set temp by < 3 deg (heater off, circ pump on?)
+00 C0 - ? temperature above set temp by >= 3 deg (heater and circ pump off?)
+
+05 C7 - ? temp 102
+05 C3 - ? temp up 103
+05 C2 - ? temp up 104
+05 C2 - ? no change 104 -> ut-1
+
+05 C6 - ? at ut-2
+05 C2 - ? ut-2 to ut-1
+05 C2 - ? no change ut-1 -> 104
+05 C3 - ? temp down 103
+05 C3 - ? no change 103 -> 102
+05 C1 - ? temp down 101
+04 C1 - ? 1 trans after temp down 101 (heater off?)
+        (then s1 ramps down to 00)
+
+s1 appears replicated from q1
+
+## t1
+## t2 (possibly replicated from q1)
+## t3 (possibly replicated from q2)
+
+Jets sequence 3, trans 2:
+00 - Both off
+01 - Jets 1 on
+02 - Jets 2 on
+
+Air sequence 4, trans 2:
+00 - off
+08 - on
+
+Clean sequence 3, trans 2:
+00 - off
+05 - clean (prob. 04=clean + 01=jets1)
+
+SetClean sequence 4, trans 2:
+00 - off
+0C - SetClean (prob. 04=clean + 08=air)
+
+## t4
+
+? Mostly 02, sometimes 00 momentarily
+
+## t5 - Commands from control panel
+
+Note: temp up/down don't affect this byte
+
+00 - No command
+
+Light sequence 1. trans 1:
+15 - Light from off to full (level 3)
+05 - Light reduce level or off
+
+Jets sequence 1, trans 1:
+12 - Jets 1 on
+02 - Jets 1 off
+13 - Jets 2 on
+03 - Jets 2 off
+
+Air sequence 1, trans 1:
+1D - Air on
+0D - Air off
+
+Clean sequence 1, trans 1:
+14 - Clean on
+04 - Clean off
+
+SetClean sequence 1, trans 1:
+33 - SetClean on
+
+Summer mode sequence 1, trans 1:
+18 - Summer mode on
+08 - Summer mode off
+
+## t6
+
+Light sequence 4, trans 2:
+00-03 - Current light level
+
+## (Write to other microcontroller)
+## u1
+
+Summer mode sequence 2, trans 2:
+07 - Normal
+47 - Toggle summer mode (momentary)
+
+## u2
+
+Light sequence 2, trans 1:
+00-03 - Current light level (0-3, 0=off, 3=full)
+
+Air sequence 2, trans 1:
+SetClean sequence 2, trans 1:
+00,80 - Current status (00=off, 80=on)
+
+## (Write to control panel)
+## v1
+
+? Always 0?

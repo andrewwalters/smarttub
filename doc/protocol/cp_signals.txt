@@ -1,0 +1,75 @@
+cp1 signals:
+
+brown = ch1 = d0 = pin1
+red = ch3 = d2 = pin3
+orange = ch5 = d4 = pin5
+yellow = ch7 = d6 = pin7
+green = ch2 = d1 = pin9
+blue = ch4 = d3 = pin2
+purple = ch6 = d5 = pin4
+white = ch8 = d7 = pin6
+
+pin1,pin6 = d0,d7 = low
+pin9 = d1 = (at temperature)
+pin3 = d2 = scl
+pin2 = d3 = sda
+pin5,pin4,pin7 = d4,d5,d6 = high
+
+buttons cp1:
+clean x 2
+air x 2
+light x 4-5
+jets1 x 2
+jets2 x 2
+temp up to ~104
+temp down to ~97
+temp up to ~102
+set x few times
+set held 3 sec x 2
+set+clean held 3 sec
+clean x 2
+
+set_cp1:
+set several times, then held 3s
+
+summer_cp1:
+temp up+down held 3s x 2
+
+setclean_cp1
+set+clean held 3s, then clean x 2
+
+cp2 signals:
+
+brown = ch1 = d0 = pin2
+red = ch3 = d2 = pin4
+orange = ch5 = d4 = pin6
+yellow = ch7 = d6 = pin8
+green = ch2 = d1 = pin10
+blue = ch4 = d3 = pin3
+purple = ch6 = d5 = pin7
+white = ch8 = d7 = pin9
+
+pin3 = d3 = scl
+pin2 = d0 = sda
+pin9 = d7 = (at temperature)
+
+power_on_cp2:
+d1 = low to high 2s after i2c traffic then always low
+d7 = high to low 8s after i2c traffic
+
+buttons cp2:
+clean x 2
+air x 2
+light x 4-5
+jets1 x 2
+jets2 x 2
+temp up to ~104
+temp down to ~97
+temp up to ~102
+set x few times
+set+clean held 3 sec
+clean x 2
+set held 3 sec x 2
+temp up+down held 3 sec x2
+
+
